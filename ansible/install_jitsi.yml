@@ -1,0 +1,80 @@
+---
+- name: Install Jitsi Meet
+  vars:
+    domain_name: videochat.yourserver.com
+    email_address: youremail@mail.com
+  gather_facts: "no"
+  hosts: jitsi
+  become: yes
+  remote_user: root
+
+  tasks:
+    - name: Add repository Universe
+      apt_repository:
+        repo: deb http://archive.ubuntu.com/ubuntu bionic universe
+        state: present
+
+    - name: Set hostname file to correct domain name
+      lineinfile:
+        path: /etc/hostname
+        regexp: "^jitsi-1"
+        line: "127.0.0.1 localhost {{ domain_name }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Add three lines to system.conf
+      lineinfile:
+        path: /etc/systemd/system.conf
+        line: "{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - "DefaultLimitNOFILE=65000"
+        - "DefaultLimitNPROC=65000"
+        - "DefaultTasksMax=65000"
+
+    - name: Reload systemctl
+      command: systemctl daemon-reload
+
+    - name: Add Jitsi package
+      raw: echo 'deb https://download.jitsi.org stable/' >> /etc/apt/sources.list.d/jitsi-stable.list
+
+    - name: Get GPG Key
+      get_url:
+        url: https://download.jitsi.org/jitsi-key.gpg.key
+        dest: /root/jitsi.gpg
+
+    - name: Add PGP Key
+      command: apt-key add /root/jitsi.gpg
+
+    - name: Install apt-transport-https
+      apt:
+        name: apt-transport-https
+
+    - name: Run the equivalent of "apt-get update" as a separate step
+      apt:
+        update_cache: yes
+
+    - name: Remove Nginx
+      apt:
+        name: nginx
+        state: absent
+
+    - name: Remove what remains
+      command: "apt -y autoremove"
+
+    - name: Write interactive values for automated installation
+      raw: "debconf-set-selections <<< 'jitsi-videobridge jitsi-videobridge/jvb-hostname string {{ domain_name }}'"
+
+    - name: Write another interactive values for automated installation
+      raw: debconf-set-selections <<< 'jitsi-meet jitsi-meet/cert-choice select Generate a new self-signed certificate (You will later get a chance to obtain a Let'\''s encrypt certificate)'
+
+    - name: Install jitsi-meet
+      apt:
+        name: jitsi-meet
+        state: present
+
+    - name: Install certificate
+      raw: "echo '{{ email_address }}' | /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh"
