@@ -4,7 +4,7 @@ variable "do_token" {
 
 resource "digitalocean_ssh_key" "default" {
   name       = "Jitsi Ubuntu SSH Keys"
-  public_key = "${file("/Users/td/.ssh/id_ed25519.pub")}"
+  public_key = "${file("/yourpath/.ssh/id_ed25519.pub")}"
 }
 
 provider "digitalocean" {
