@@ -17,3 +17,7 @@ https://jitsi.org/
 https://github.com/jitsi/jitsi-meet/blob/master/doc/quick-install.md
 
 https://stackoverflow.com/questions/7739645/install-mysql-on-ubuntu-without-a-password-prompt
+
+## License
+
+Apache 2.0 License
